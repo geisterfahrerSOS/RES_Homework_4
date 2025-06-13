@@ -18,4 +18,3 @@ package alu_op is
     constant ALU_NOP: std_logic_vector(3 downto 0) := "1110"; -- NOP (no operation)
     constant ALU_INV: std_logic_vector(3 downto 0) := "1111"; -- undefined operation
 end package alu_op;
-

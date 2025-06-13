@@ -1,19 +1,19 @@
 addi --
 bge
 bne
-bnez
+bnez (pseudo)
 flw (Hella uncertain about this one.)
-j
-jal
+j (pseudo)
+jal -- (there is also jalr)
 lbu --
-li
-lui
+li (pseudo)
+lui --
 lw --
-mv
-nop
-ret
-sb --
-sw --
+mv (pseudo)
+nop (pseudo)
+ret (pseudo)
+sb 
+sw
 unimp (also not sure what this is or does.)
 
 will implement decoder and such without flw and unimp at first, idk what to make of these.
