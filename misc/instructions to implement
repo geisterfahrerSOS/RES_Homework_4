@@ -1,0 +1,17 @@
+addi
+bge
+bne
+bnez
+flw
+j
+jal
+lbu
+li
+lui
+lw
+mv
+nop
+ret
+sb
+sw
+unimp
