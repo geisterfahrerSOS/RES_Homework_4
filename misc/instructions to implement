@@ -2,7 +2,7 @@ addi
 bge
 bne
 bnez
-flw
+flw (Hella uncertain about this one.)
 j
 jal
 lbu
@@ -14,4 +14,6 @@ nop
 ret
 sb
 sw
-unimp
+unimp (also not sure what this is or does.)
+
+will implement decoder and such without flw and unimp at first, idk what to make of these.
