@@ -82,7 +82,4 @@ begin
         end case;
     end process;
 
-    -- Immediate value extraction based on instruction type
-    --placeholder
-    
 end architecture behavioral;
