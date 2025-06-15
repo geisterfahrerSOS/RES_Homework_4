@@ -5,10 +5,10 @@ use work.alu_op.all;
 
 entity alu is
     port (
-        rs1_data: in std_logic_vector(31 downto 0); -- Source register 1 data
-        rs2_data: in std_logic_vector(31 downto 0); -- Source register 2 data or immediate
+        src_a: in std_logic_vector(31 downto 0); -- Source register 1 data
+        src_b: in std_logic_vector(31 downto 0); -- Source register 2 data or immediate
         alu_op: in std_logic_vector(3 downto 0); -- ALU operation code
-        alU_result: out std_logic_vector(31 downto 0); -- ALU result output
+        alu_result: out std_logic_vector(31 downto 0); -- ALU result output
         alu_flags: out std_logic_vector(3 downto 0) -- ALU flags (zero, carry, overflow, negative)
     );
 end entity alu;
@@ -23,54 +23,54 @@ architecture behavioral of alu is
     signal carry : std_logic;
 
 begin
-    process(rs1_data, rs2_data, alu_op)
+    process(src_a, src_b, alu_op)
     begin
         add_result_temp <= (others => '0');
         sub_result_temp <= (others => '0');
 
         case alu_op is
             when ALU_ADD =>
-                result_temp <= std_logic_vector(signed(rs1_data) + signed(rs2_data));
-                add_result_temp <= std_logic_vector(('0' & unsigned(rs1_data)) + ('0' & unsigned(rs2_data)));
+                result_temp <= std_logic_vector(signed(src_a) + signed(src_b));
+                add_result_temp <= std_logic_vector(('0' & unsigned(src_a)) + ('0' & unsigned(src_b)));
 
             when ALU_SUB =>
-                result_temp <= std_logic_vector(signed(rs1_data) - signed(rs2_data));
-                sub_result_temp <= std_logic_vector(('0' & unsigned(rs1_data)) - ('0' & unsigned(rs2_data)));
+                result_temp <= std_logic_vector(signed(src_a) - signed(src_b));
+                sub_result_temp <= std_logic_vector(('0' & unsigned(src_a)) - ('0' & unsigned(src_b)));
 
             when ALU_AND =>
-                result_temp <= rs1_data and rs2_data;
+                result_temp <= src_a and src_b;
 
             when ALU_OR =>
-                result_temp <= rs1_data or rs2_data;
+                result_temp <= src_a or src_b;
 
             when ALU_XOR =>
-                result_temp <= rs1_data xor rs2_data;
+                result_temp <= src_a xor src_b;
 
             when ALU_SLL =>
-                result_temp <= std_logic_vector(shift_left(unsigned(rs1_data), to_integer(unsigned(rs2_data(4 downto 0)))));
+                result_temp <= std_logic_vector(shift_left(unsigned(src_a), to_integer(unsigned(src_b(4 downto 0)))));
 
             when ALU_SRL =>
-                result_temp <= std_logic_vector(shift_right(unsigned(rs1_data), to_integer(unsigned(rs2_data(4 downto 0)))));
+                result_temp <= std_logic_vector(shift_right(unsigned(src_a), to_integer(unsigned(src_b(4 downto 0)))));
 
             when ALU_SRA =>
-                result_temp <= std_logic_vector(shift_right(signed(rs1_data), to_integer(unsigned(rs2_data(4 downto 0)))));
+                result_temp <= std_logic_vector(shift_right(signed(src_a), to_integer(unsigned(src_b(4 downto 0)))));
 
             when ALU_SLT =>
-                if signed(rs1_data) < signed(rs2_data) then
+                if signed(src_a) < signed(src_b) then
                     result_temp <= x"00000001";
                 else
                     result_temp <= x"00000000";
                 end if;
 
             when ALU_SLTU =>
-                if unsigned(rs1_data) < unsigned(rs2_data) then
+                if unsigned(src_a) < unsigned(src_b) then
                     result_temp <= x"00000001";
                 else
                     result_temp <= x"00000000";
                 end if;
 
             when ALU_PASS =>
-                result_temp <= rs2_data;
+                result_temp <= src_b;
 
             when ALU_NOP =>
                 result_temp <= (others => '0');

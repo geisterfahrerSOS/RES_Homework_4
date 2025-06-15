@@ -4,7 +4,7 @@ use IEEE.numeric_std.all;
 use work.wb_sel.all;
 
 
-entity mux_wb_sel is
+entity mux_wb is
     port (
         alu_result   : in std_logic_vector(31 downto 0);
         pc_plus_4    : in std_logic_vector(31 downto 0);
@@ -12,9 +12,9 @@ entity mux_wb_sel is
         wb_sel       : in std_logic_vector(1 downto 0);
         wb_data      : out std_logic_vector(31 downto 0)
     );
-end entity mux_wb_sel;
+end entity mux_wb;
 
-architecture rtl of mux_wb_sel is
+architecture behavioral of mux_wb is
 begin
     process(all)
     begin
@@ -29,4 +29,4 @@ begin
                 wb_data <= (others => '0');
         end case;
     end process;
-end architecture rtl;
+end architecture behavioral;
