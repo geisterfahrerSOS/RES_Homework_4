@@ -21,6 +21,10 @@ end register_file;
 architecture rtl of register_file is
     type register_array is array (31 downto 0) of std_logic_vector(31 downto 0);
     signal registers : register_array;
+
+    -- Constant for UART memory addresses (adjust as needed)
+    constant UART_BAUD_ADDR : std_logic_vector(31 downto 0) := x"20000004";
+    constant UART_DATA_ADDR : std_logic_vector(31 downto 0) := x"20000008";
 begin
     -- Read process (combinational)
     read_process: process(rs1_addr, rs2_addr, registers)
