@@ -27,7 +27,7 @@ architecture Behavioral of riscv_top is
         rd_we : out std_logic; -- Write enable for destination register
         alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
         wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
-        pc_sel : out std_logic_vector(1 downto 0) -- PC select output
+        pc_sel : out std_logic_vector(1 downto 0); -- PC select output
         branch_sel: out std_logic_vector(2 downto 0) -- Branch select output
     );
     end component;
@@ -62,23 +62,6 @@ architecture Behavioral of riscv_top is
             rs2 : in std_logic_vector(31 downto 0);
             branch_sel : in std_logic_vector(2 downto 0);
             branch_cond : out std_logic
-        );
-    end component;
-
-    component control_unit is
-        port (
-            clk : in std_logic;
-            rst : in std_logic;
-            opcode : in std_logic_vector(6 downto 0);
-            rd : in std_logic_vector(4 downto 0);
-            funct3 : in std_logic_vector(2 downto 0);
-            rs1 : in std_logic_vector(4 downto 0);
-            rs2 : in std_logic_vector(4 downto 0);
-            funct7 : in std_logic_vector(6 downto 0);
-            rd_we : out std_logic;
-            alu_op : out std_logic_vector(3 downto 0);
-            wb_sel : out std_logic_vector(1 downto 0);
-            pc_sel : out std_logic_vector(1 downto 0)
         );
     end component;
 

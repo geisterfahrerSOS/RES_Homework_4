@@ -21,7 +21,7 @@ entity control_unit is
         rd_we : out std_logic; -- Write enable for destination register
         alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
         wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
-        pc_sel : out std_logic_vector(1 downto 0) -- PC select output
+        pc_sel : out std_logic_vector(1 downto 0); -- PC select output
         branch_sel: out std_logic_vector(2 downto 0) -- Branch select output
     );
 end control_unit;
@@ -119,7 +119,7 @@ begin
                     when OPCODE_BRANCH =>
                         -- Do nothing handled in branch control unit it gets the two registers and the funct3
                         alu_op <= ALU_NOP; -- No ALU operation for branches
-                        wb_sel <= WB_NOP; -- No write back for branches
+                        wb_sel <= WB_IMM; -- No write back for branches
                         src_a_sel <= "0"; -- Select rs1 for ALU source A
                         src_b_sel <= "1"; -- Select rs2 for ALU source B
 

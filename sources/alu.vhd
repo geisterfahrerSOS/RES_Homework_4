@@ -1,4 +1,4 @@
-library library IEEE;
+library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use work.alu_op.all;
@@ -84,8 +84,8 @@ begin
     zero <= '1' when result_temp = x"00000000" else '0';
     sign <= result_temp(31);
     overflow <= '1' when 
-        (alu_op = ALU_ADD and rs1_data(31) = rs2_data(31) and rs1_data(31) /= result_temp(31)) or
-        (alu_op = ALU_SUB and rs1_data(31) /= rs2_data(31) and rs1_data(31) /= result_temp(31))
+        (alu_op = ALU_ADD and src_a(31) = src_b(31) and src_a(31) /= result_temp(31)) or
+        (alu_op = ALU_SUB and src_a(31) /= src_b(31) and src_a(31) /= result_temp(31))
         else '0';
 
     carry <= add_result_temp(32) when alu_op = ALU_ADD else
