@@ -1,68 +1,101 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
--- ALU copy pasted from previous homework, might need adjustment.
+library library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+use work.alu_op.all;
 
 entity alu is
-   port (
-      A: in std_logic_vector(31 downto 0);           
-      B: in std_logic_vector(31 downto 0);           
-      F: in std_logic_vector(2 downto 0);            -- ALU function selector
-      R: out std_logic_vector(31 downto 0);          -- Result
-      S: out std_logic_vector(3 downto 0)            -- Status flags
-   );
+    port (
+        rs1_data: in std_logic_vector(31 downto 0); -- Source register 1 data
+        rs2_data: in std_logic_vector(31 downto 0); -- Source register 2 data or immediate
+        alu_op: in std_logic_vector(3 downto 0); -- ALU operation code
+        alU_result: out std_logic_vector(31 downto 0); -- ALU result output
+        alu_flags: out std_logic_vector(3 downto 0) -- ALU flags (zero, carry, overflow, negative)
+    );
 end entity alu;
+    
+architecture behavioral of alu is
+    signal result_temp : std_logic_vector(31 downto 0);
+    signal add_result_temp : std_logic_vector(32 downto 0);
+    signal sub_result_temp : std_logic_vector(32 downto 0);
+    signal zero : std_logic;
+    signal sign : std_logic;
+    signal overflow : std_logic;
+    signal carry : std_logic;
 
-architecture behave of alu is 
-   signal result_temp: std_logic_vector(31 downto 0);
-   signal add_result_temp: std_logic_vector(32 downto 0);
-   signal sub_result_temp: std_logic_vector(32 downto 0);
-   signal zero: std_logic;
-   signal sign: std_logic;
-   signal overflow: std_logic;
-   signal carry: std_logic;
-begin 
-   -- Function selection process
-   process(A, B, F)
-   begin
-      case F is
-         when "000" =>  -- 0
-            result_temp <= (others => '0');
-         when "001" =>  -- A
-            result_temp <= A;
-         when "010" =>  -- not A
-            result_temp <= not A;
-         when "011" =>  -- A AND B
-            result_temp <= A and B;
-         when "100" =>  -- A OR B
-            result_temp <= A or B;
-         when "101" =>  -- A XOR B
-            result_temp <= A xor B;
-         when "110" =>  -- A + B
-            result_temp <= std_logic_vector(unsigned(A) + unsigned(B));
-            add_result_temp <= std_logic_vector(('0' & unsigned(A)) + ('0' & unsigned(B)));
-         when "111" =>  -- A - B
-            result_temp <= std_logic_vector(unsigned(A) - unsigned(B));
-            sub_result_temp <= std_logic_vector(('0' & unsigned(A)) - ('0' & unsigned(B)));
-         when others =>
-            result_temp <= (others => '0');
-      end case;
-   end process;
+begin
+    process(rs1_data, rs2_data, alu_op)
+    begin
+        add_result_temp <= (others => '0');
+        sub_result_temp <= (others => '0');
 
-   -- Status flags calculation
-   zero <= '1' when result_temp = x"00000000" else '0'; -- Zero flag is set if result is zero
-   sign <= result_temp(31); -- Sign flag is the MSB of the result
-   
-   overflow <= '1' when (F = "110" and A(31) = B(31) and A(31) /= result_temp(31)) or -- when adding two numbers of the same sign results in a different sign there is an overflow in direction
-                           (F = "111" and A(31) /= B(31) and A(31) /= result_temp(31)) -- when subtracting a number from another of different sign results in a different sign from the number being subtracted from there is an overflow in direction
-                   else '0';
-                   
-   carry <= add_result_temp(32) when F = "110" else -- the MSB of the 33 bit usigned result of the addition
-                 sub_result_temp(32) when F = "111" else -- the MSB of the 33 bit usigned result of the subtraction
-                 '0';
+        case alu_op is
+            when ALU_ADD =>
+                result_temp <= std_logic_vector(signed(rs1_data) + signed(rs2_data));
+                add_result_temp <= std_logic_vector(('0' & unsigned(rs1_data)) + ('0' & unsigned(rs2_data)));
 
-   -- Output
-   R <= result_temp;
-   S <= zero & sign & overflow & carry;
-end architecture behave;
+            when ALU_SUB =>
+                result_temp <= std_logic_vector(signed(rs1_data) - signed(rs2_data));
+                sub_result_temp <= std_logic_vector(('0' & unsigned(rs1_data)) - ('0' & unsigned(rs2_data)));
+
+            when ALU_AND =>
+                result_temp <= rs1_data and rs2_data;
+
+            when ALU_OR =>
+                result_temp <= rs1_data or rs2_data;
+
+            when ALU_XOR =>
+                result_temp <= rs1_data xor rs2_data;
+
+            when ALU_SLL =>
+                result_temp <= std_logic_vector(shift_left(unsigned(rs1_data), to_integer(unsigned(rs2_data(4 downto 0)))));
+
+            when ALU_SRL =>
+                result_temp <= std_logic_vector(shift_right(unsigned(rs1_data), to_integer(unsigned(rs2_data(4 downto 0)))));
+
+            when ALU_SRA =>
+                result_temp <= std_logic_vector(shift_right(signed(rs1_data), to_integer(unsigned(rs2_data(4 downto 0)))));
+
+            when ALU_SLT =>
+                if signed(rs1_data) < signed(rs2_data) then
+                    result_temp <= x"00000001";
+                else
+                    result_temp <= x"00000000";
+                end if;
+
+            when ALU_SLTU =>
+                if unsigned(rs1_data) < unsigned(rs2_data) then
+                    result_temp <= x"00000001";
+                else
+                    result_temp <= x"00000000";
+                end if;
+
+            when ALU_PASS =>
+                result_temp <= rs2_data;
+
+            when ALU_NOP =>
+                result_temp <= (others => '0');
+
+            when others =>
+                result_temp <= (others => '0');
+        end case;
+    end process;
+
+    -- Flags
+    zero <= '1' when result_temp = x"00000000" else '0';
+    sign <= result_temp(31);
+    overflow <= '1' when 
+        (alu_op = ALU_ADD and rs1_data(31) = rs2_data(31) and rs1_data(31) /= result_temp(31)) or
+        (alu_op = ALU_SUB and rs1_data(31) /= rs2_data(31) and rs1_data(31) /= result_temp(31))
+        else '0';
+
+    carry <= add_result_temp(32) when alu_op = ALU_ADD else
+             sub_result_temp(32) when alu_op = ALU_SUB else
+             '0';
+
+    -- Outputs
+    alu_result <= result_temp;
+    alu_flags <= zero & sign & overflow & carry;
+end architecture behavioral;
+
+
+                
