@@ -12,17 +12,17 @@ use ieee.numeric_std.all;
 
 entity ROM is
     generic(
-        addr_width  : integer := 8; -- required bits to store 16 elements
-        data_width : integer := 32 -- each element has 7-bits
+        addr_width  : integer := 10; -- 2^addr_width entries in ROM; up to 1024 entries for addr_width = 10; aka 32Kbits or 4 KBytes ROM
+        data_width : integer := 32 -- each element is 32 bits wide
         );
 port(
     addr : in std_logic_vector(addr_width-1 downto 0);
     data : out std_logic_vector(data_width-1 downto 0)
-);
+);  
 end ROM;
 
 architecture ROM_arch of ROM is
-  type rom_type is array (0 to addr_width-1) of std_logic_vector(data_width-1 downto 0);
+  type rom_type is array (0 to (2**addr_width) - 1) of std_logic_vector(data_width-1 downto 0);
   signal ROM_array : rom_type := (
 	
 --init_data
