@@ -13,23 +13,24 @@ end riscv_top;
 architecture Behavioral of riscv_top is
     -- Component declarations for the RISC-V processor
     component control_unit is
-    port (
-        clk : in std_logic;
-        rst : in std_logic;
-        opcode : in std_logic_vector(6 downto 0); -- Opcode output
-        rd : in std_logic_vector(4 downto 0); -- Destination register output
-        funct3 : in std_logic_vector(2 downto 0); -- Function3 output
-        rs1 : in std_logic_vector(4 downto 0); -- Source register 1 output
-        rs2 : in std_logic_vector(4 downto 0); -- Source register 2 output
-        funct7 : in std_logic_vector(6 downto 0); -- Function7 output
-        src_a_sel: out std_logic;
-        src_b_sel: out std_logic;
-        rd_we : out std_logic; -- Write enable for destination register
-        alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
-        wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
-        pc_sel : out std_logic_vector(2 downto 0); -- PC select output
-        branch_sel: out std_logic_vector(2 downto 0) -- Branch select output
-    );
+        port (
+            clk : in std_logic;
+            rst : in std_logic;
+            opcode : in std_logic_vector(6 downto 0); -- Opcode output
+            rd : in std_logic_vector(4 downto 0); -- Destination register output
+            funct3 : in std_logic_vector(2 downto 0); -- Function3 output
+            rs1 : in std_logic_vector(4 downto 0); -- Source register 1 output
+            rs2 : in std_logic_vector(4 downto 0); -- Source register 2 output
+            funct7 : in std_logic_vector(6 downto 0); -- Function7 output
+            src_a_sel : out std_logic;
+            src_b_sel : out std_logic;
+            rd_we : out std_logic; -- Write enable for destination register
+            alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
+            wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
+            pc_sel : out std_logic_vector(2 downto 0); -- PC select output
+            branch_sel : out std_logic_vector(2 downto 0); -- Branch select output
+            mem_we : out std_logic -- Memory write enable signal, if needed
+        );
     end component;
 
     -- Signals for program counter and branching
@@ -65,16 +66,6 @@ architecture Behavioral of riscv_top is
         );
     end component;
 
-    component data_ram is
-        port (
-            clk : in std_logic;
-            we : in std_logic;
-            addr : in std_logic_vector (9 downto 0);
-            din : in std_logic_vector (31 downto 0);
-            dout : out std_logic_vector (31 downto 0)
-        );
-    end component;
-
     component decoder is
         port (
             instr : in std_logic_vector(31 downto 0);
@@ -105,6 +96,20 @@ architecture Behavioral of riscv_top is
         );
     end component;
 
+    component ram is
+        generic (
+            DATA_WIDTH : integer := 32; -- Width of data bus
+            ADDR_WIDTH : integer := 32 -- Width of address bus
+        );
+        port (
+            clk : in std_logic; -- Clock input
+            we : in std_logic; -- Write enable
+            addr : in std_logic_vector(ADDR_WIDTH - 1 downto 0); -- Address input
+            data_in : in std_logic_vector(DATA_WIDTH - 1 downto 0); -- Data input
+            data_out : out std_logic_vector(DATA_WIDTH - 1 downto 0) -- Data output
+        );
+    end component;
+
     component mux_alu_src_a is
         port (
             rs1_data : in std_logic_vector(31 downto 0); -- Data from register rs1
@@ -129,7 +134,8 @@ architecture Behavioral of riscv_top is
             pc_plus_4 : in std_logic_vector(31 downto 0);
             imm : in std_logic_vector(31 downto 0);
             wb_sel : in std_logic_vector(1 downto 0);
-            wb_data : out std_logic_vector(31 downto 0)
+            wb_data : out std_logic_vector(31 downto 0);
+            wb_mem_data : in std_logic_vector(31 downto 0) -- Memory data input
         );
     end component;
 
@@ -173,7 +179,7 @@ architecture Behavioral of riscv_top is
 
     signal alu_result : std_logic_vector(31 downto 0);
     signal alu_flags : std_logic_vector(3 downto 0);
-    
+
     signal alu_op : std_logic_vector(3 downto 0);
     signal wb_sel : std_logic_vector(1 downto 0);
     signal rd_we : std_logic;
@@ -181,10 +187,13 @@ architecture Behavioral of riscv_top is
     signal src_a_sel : std_logic;
     signal src_b_sel : std_logic;
     signal branch_sel : std_logic_vector(2 downto 0);
+    signal mem_we : std_logic; -- Memory write enable signal, if needed
 
     signal branch_cond : std_logic;
 
     signal wb_data : std_logic_vector(31 downto 0);
+
+    signal mem_data_out : std_logic_vector(31 downto 0); -- Data read from RAM
 
 begin
 
@@ -230,8 +239,22 @@ begin
         data => instr -- You'll need to declare this signal
     );
 
+    -- Instantiate RAM for data memory
+    ram_inst : ram
+    generic map(
+        DATA_WIDTH => 32, -- Width of data bus
+        ADDR_WIDTH => 32 -- Width of address bus
+    )
+    port map(
+        clk => clk,
+        we => mem_we, -- Write enable signal
+        addr => alu_result, -- Address for RAM access, typically the ALU result
+        data_in => rs2_data, -- Data to write into RAM
+        data_out => mem_data_out -- Data read from RAM
+    );
+
     -- Instance decoder and connect to register file
-    decoder_inst : decoder 
+    decoder_inst : decoder
     port map(
         instr => instr,
         opcode => opcode,
@@ -292,11 +315,12 @@ begin
         pc_plus_4 => std_logic_vector(unsigned(pc) + 4),
         imm => imm,
         wb_sel => wb_sel,
+        wb_mem_data => mem_data_out,
         wb_data => wb_data
     );
 
-    branch_logic_inst: branch_logic
-     port map(
+    branch_logic_inst : branch_logic
+    port map(
         rs1_data => rs1_data,
         rs2_data => rs2_data,
         branch_sel => branch_sel,

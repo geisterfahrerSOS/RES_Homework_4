@@ -10,7 +10,8 @@ entity mux_wb is
         pc_plus_4    : in std_logic_vector(31 downto 0);
         imm          : in std_logic_vector(31 downto 0);
         wb_sel       : in std_logic_vector(1 downto 0);
-        wb_data      : out std_logic_vector(31 downto 0)
+        wb_data      : out std_logic_vector(31 downto 0);
+        wb_mem_data : in std_logic_vector(31 downto 0) -- Memory data input
     );
 end entity mux_wb;
 
@@ -27,7 +28,7 @@ begin
                 wb_data <= imm;
             when WB_MEM =>
                 -- Assuming memory data is not provided in this context, set to zero
-                wb_data <= (others => '0'); -- Placeholder for memory data
+                wb_data <= wb_mem_data;
             when others =>
                 wb_data <= (others => '0');
         end case;
