@@ -6,6 +6,9 @@ use work.opcodes.all; -- Import opcode definitions
 use work.alu_op.all; -- Import ALU operation codes
 use work.wb_sel.all; -- Import write-back select definitions
 
+use work.pc_sel.all; -- Import PC select definitions
+use work.branch_sel.all; -- Import branch selector codes
+
 entity control_unit is
     port (
         clk : in std_logic;
@@ -21,7 +24,7 @@ entity control_unit is
         rd_we : out std_logic; -- Write enable for destination register
         alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
         wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
-        pc_sel : out std_logic_vector(1 downto 0); -- PC select output
+        pc_sel : out std_logic_vector(2 downto 0); -- PC select output
         branch_sel: out std_logic_vector(2 downto 0) -- Branch select output
     );
 end control_unit;
@@ -65,7 +68,7 @@ begin
                         src_a_sel <= '0'; -- Select rs1 for ALU source A
                         src_b_sel <= '0'; -- Select rs2 for ALU source B
                         wb_sel <= WB_ALU; -- Write back ALU result for R-type instructions
-                        pc_sel <= "00"; -- No PC change for R-type instructions
+                        pc_sel <= PC_PLUS_4; -- No PC change for R-type instructions
                         rd_we <= '1'; -- Enable write to destination register
 
                     when OPCODE_OP_IMM =>
@@ -91,7 +94,7 @@ begin
                         src_a_sel <= '0'; -- Select rs1 for ALU source A
                         src_b_sel <= '0'; -- Select immediate for ALU source B
                         wb_sel <= WB_ALU; -- Write back ALU result for I-type instructions
-                        pc_sel <= "00"; -- No PC change for I-type instructions
+                        pc_sel <= PC_PLUS_4; -- No PC change for I-type instructions
                         rd_we <= '1'; -- Enable write to destination register
 
                     when OPCODE_LOAD =>
@@ -106,7 +109,7 @@ begin
                         src_a_sel <= '0'; -- Select rs1 for ALU source A
                         src_b_sel <= '0'; -- Select immediate for ALU source B
                         wb_sel <= WB_MEM; -- Write back memory result for load instructions
-                        pc_sel <= "00"; -- No PC change for load instructions
+                        pc_sel <= PC_PLUS_4; -- No PC change for load instructions
                         rd_we <= '1'; -- Enable write to destination register
 
 
@@ -116,7 +119,7 @@ begin
                         wb_sel <= WB_PC_PLUS_4; -- Write back PC + 4 for JALR
                         src_a_sel <= '0'; -- Select rs1 for ALU source A
                         src_b_sel <= '0'; -- Select immediate for ALU source B
-                        pc_sel <= "01"; -- Set PC to rs1 + immediate
+                        pc_sel <= PC_JALR; -- Set PC to rs1 + immediate
                         rd_we <= '1'; -- Enable write to destination register
 
 
@@ -129,7 +132,7 @@ begin
                         src_b_sel <= '1'; -- Select rs2 for ALU source B
                         alu_op <= ALU_ADD; -- Add rs1 and immediate for store address calculation
                         wb_sel <= WB_ALU; -- Write back ALU result for store address
-                        pc_sel <= "00"; -- No PC change for store instructions
+                        pc_sel <= PC_PLUS_4; -- No PC change for store instructions
                         rd_we <= '0'; -- Disable write to destination register for store instructions
 
                     when OPCODE_BRANCH =>
@@ -138,7 +141,7 @@ begin
                         wb_sel <= WB_IMM; -- No write back for branches
                         src_a_sel <= '0'; -- Select rs1 for ALU source A
                         src_b_sel <= '1'; -- Select rs2 for ALU source B
-                        pc_sel <= "10"; -- Set PC to branch target
+                        pc_sel <= PC_BR; -- Set PC to branch target
                         rd_we <= '0'; -- Disable write to destination register for branch instructions
 
                     when OPCODE_LUI =>
@@ -146,7 +149,7 @@ begin
                         src_a_sel <= '0'; -- Select immediate for ALU source A
                         src_b_sel <= '0'; -- No second source for ALU
                         alu_op <= ALU_NOP; -- No ALU operation for LUI
-                        pc_sel <= "00"; -- No PC change for LUI
+                        pc_sel <= PC_PLUS_4; -- No PC change for LUI
                         rd_we <= '1'; -- Enable write to destination register for LUI
 
                     when OPCODE_AUIPC =>
@@ -155,7 +158,7 @@ begin
                         wb_sel <= WB_ALU; -- Write back ALU result for AUIPC
                         src_a_sel <= '1'; -- Select PC for ALU source A
                         src_b_sel <= '0'; -- Select immediate for ALU source B
-                        pc_sel <= "00"; -- No PC change for AUIPC
+                        pc_sel <= PC_PLUS_4; -- No PC change for AUIPC
                         rd_we <= '1'; -- Enable write to destination register for AUIPC
 
                     when OPCODE_JAL =>
@@ -166,7 +169,7 @@ begin
                         src_a_sel <= '0'; -- Select rs1 for ALU source A
                         src_b_sel <= '0'; -- Select immediate for ALU source B
                         alu_op <= ALU_NOP; -- No ALU operation for JAL
-                        pc_sel <= "01"; -- Set PC to immediate offset
+                        pc_sel <= PC_BR; -- Set PC to immediate offset
                         rd_we <= '1'; -- Enable write to destination register for JAL
 
                     when OPCODE_MISC_MEM =>
@@ -175,7 +178,7 @@ begin
                         src_b_sel <= '0'; -- No second source for ALU
                         alu_op <= ALU_NOP; -- No ALU operation for MISC_MEM
                         wb_sel <= WB_ALU; -- Write back ALU result for MISC_MEM
-                        pc_sel <= "00"; -- No PC change for MISC_MEM
+                        pc_sel <= PC_PLUS_4; -- No PC change for MISC_MEM
                         rd_we <= '0'; -- Disable write to destination register for MISC_MEM
 
                     when others =>
@@ -183,7 +186,7 @@ begin
                         wb_sel <= WB_ALU; -- Default write back ALU result
                         src_a_sel <= '0'; -- Default select rs1 for ALU source A
                         src_b_sel <= '0'; -- Default select rs2 for ALU source B
-                        pc_sel <= "00"; -- Default no PC change
+                        pc_sel <= PC_PLUS_4; -- Default no PC change
                         rd_we <= '0'; -- Default disable write to destination register
 
                 end case;

@@ -6,8 +6,7 @@ use IEEE.NUMERIC_STD.all;
 entity riscv_top is
     port (
         clk : in std_logic;
-        rst : in std_logic;
-        pc_out: out std_logic_vector(31 downto 0) -- Program counter output
+        rst : in std_logic
     );
 end riscv_top;
 
@@ -28,7 +27,7 @@ architecture Behavioral of riscv_top is
         rd_we : out std_logic; -- Write enable for destination register
         alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
         wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
-        pc_sel : out std_logic_vector(1 downto 0); -- PC select output
+        pc_sel : out std_logic_vector(2 downto 0); -- PC select output
         branch_sel: out std_logic_vector(2 downto 0) -- Branch select output
     );
     end component;
@@ -38,7 +37,7 @@ architecture Behavioral of riscv_top is
         port (
             clk : in std_logic;
             reset : in std_logic;
-            pc_sel : in std_logic_vector(1 downto 0);
+            pc_sel : in std_logic_vector(2 downto 0);
             branch_cond : in std_logic;
             imm : in std_logic_vector(31 downto 0);
             rs1_data : in std_logic_vector(31 downto 0);
@@ -108,7 +107,7 @@ architecture Behavioral of riscv_top is
 
     component mux_alu_src_a is
         port (
-            rd1 : in std_logic_vector(31 downto 0); -- Data from register rs1
+            rs1_data : in std_logic_vector(31 downto 0); -- Data from register rs1
             pc : in std_logic_vector(31 downto 0); -- PC
             src_a_sel : in std_logic;
             src_a : out std_logic_vector(31 downto 0) -- mux output
@@ -117,7 +116,7 @@ architecture Behavioral of riscv_top is
 
     component mux_alu_src_b is
         port (
-            rd2 : in std_logic_vector(31 downto 0); -- Data from register rd2
+            rs2_data : in std_logic_vector(31 downto 0); -- Data from register rd2
             imm : in std_logic_vector(31 downto 0); -- Immediate value
             src_b_sel : in std_logic;
             src_b : out std_logic_vector(31 downto 0) -- mux output
@@ -178,7 +177,7 @@ architecture Behavioral of riscv_top is
     signal alu_op : std_logic_vector(3 downto 0);
     signal wb_sel : std_logic_vector(1 downto 0);
     signal rd_we : std_logic;
-    signal pc_sel : std_logic_vector(1 downto 0);
+    signal pc_sel : std_logic_vector(2 downto 0);
     signal src_a_sel : std_logic;
     signal src_b_sel : std_logic;
     signal branch_sel : std_logic_vector(2 downto 0);
@@ -264,7 +263,7 @@ begin
 
     mux_alu_src_a_inst : mux_alu_src_a
     port map(
-        rd1 => rs1_data,
+        rs1_data => rs1_data,
         pc => pc,
         src_a_sel => src_a_sel,
         src_a => src_a
@@ -272,7 +271,7 @@ begin
 
     mux_alu_src_b_inst : mux_alu_src_b
     port map(
-        rd2 => rs2_data,
+        rs2_data => rs2_data,
         imm => imm,
         src_b_sel => src_b_sel,
         src_b => src_b
@@ -303,6 +302,4 @@ begin
         branch_sel => branch_sel,
         branch_cond => branch_cond
     );
-
-    pc_out <= pc; -- Output the current PC value
 end Behavioral;

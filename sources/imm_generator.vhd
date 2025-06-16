@@ -17,7 +17,7 @@ architecture behavioral of imm_generator is
 
 begin
     opcode <= instr(6 downto 0); -- Extract opcode from instruction
-    process (instr)
+    process (opcode, instr)
     begin
         case opcode is
 

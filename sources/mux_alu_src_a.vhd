@@ -8,7 +8,7 @@ use work.opcodes.all; -- Import opcode definitions
 -- This mux selects between the PC value or register data based on the opcode
 entity mux_alu_src_a is
     port(
-        rd1: in std_logic_vector(31 downto 0); -- Data from register rs1
+        rs1_data: in std_logic_vector(31 downto 0); -- Data from register rs1
         pc: in std_logic_vector(31 downto 0); -- PC
         src_a_sel: in std_logic;
         src_a: out std_logic_vector(31 downto 0) -- mux output
@@ -21,7 +21,7 @@ begin
     process(src_a_sel)
     begin
         if src_a_sel = '0' then
-            src_a <= rd1; -- Select register data
+            src_a <= rs1_data; -- Select register data
         else
             src_a <= pc; -- Select PC value
         end if;
