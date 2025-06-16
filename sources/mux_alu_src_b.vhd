@@ -10,7 +10,7 @@ entity mux_alu_src_b is
     port(
         rd2: in std_logic_vector(31 downto 0); -- Data from register rd2
         imm: in std_logic_vector(31 downto 0); -- Immediate value
-        src_b_sel: in std_logic_vector;
+        src_b_sel: in std_logic;
         src_b: out std_logic_vector(31 downto 0) -- mux output
     );
 end entity mux_alu_src_b;
@@ -20,7 +20,7 @@ begin
 
     process(src_b_sel)
     begin
-        if src_b_sel = "0" then
+        if src_b_sel = '0' then
             src_b <= imm; -- Select immediate value
         else
             src_b <= rd2; -- Select register data

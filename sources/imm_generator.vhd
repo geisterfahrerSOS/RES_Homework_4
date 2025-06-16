@@ -1,4 +1,4 @@
-library library IEEE;
+library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
@@ -22,31 +22,26 @@ begin
         case opcode is
 
                 -- I-type (addi, lw, lbu)
-            when OPCODE_OP_IMM or OPCODE_LOAD or OPCODE_JALR or OPCODE_SYSTEM =>
+            when OPCODE_OP_IMM | OPCODE_LOAD | OPCODE_JALR | OPCODE_SYSTEM =>
                 imm_temp <= resize(signed(instr(31 downto 20)), 32); -- I-type immediate (12 bits)
 
                 -- S-type (sw, sb)
             when OPCODE_STORE =>
-                imm_temp <= resize(signed(instr(31 downto 25) & instr(11 downto 7)), 32); -- S-type immediate (12 bits)
+                imm_temp <= resize(signed(instr(31) & instr(30 downto 25) & instr(11 downto 7)), 32); -- S-type immediate (12 bits)
 
                 -- B-type (bne, bge, bnez)
             when OPCODE_BRANCH =>
                 imm_temp <= resize(signed(instr(31) & instr(7) & instr(30 downto 25) & instr(11 downto 8) & '0'), 32);
 
                 -- U-type (lui)
-            when OPCODE_LUI or OPCODE_AUIPC =>
+            when OPCODE_LUI | OPCODE_AUIPC =>
                 imm_temp <= signed(instr(31 downto 12) & x"000");
 
                 -- J-type (jal)
             when OPCODE_JAL =>
-                imm_temp <= resize(signed(instr(32) & instr(19 downto 12) & instr(20) & instr(30 downto 21) & '0'), 32);
+                imm_temp <= resize(signed(instr(31) & instr(19 downto 12) & instr(20) & instr(30 downto 21) & '0'), 32);
 
-            when OPCODE_OP =>
-                -- R-type instructions do not have an immediate value
-                imm_temp <= (others => '0'); -- Set immediate to 0 for R-type
-
-            when OPCODE_MISC_MEM =>
-                -- Reserved/Unused Opcode (often used for FENCE, FENCE.I or other extensions)
+            when OPCODE_OP | OPCODE_MISC_MEM =>
                 imm_temp <= (others => '0'); -- Set immediate to 0 for reserved opcodes
 
             when others =>

@@ -10,7 +10,7 @@ entity mux_alu_src_a is
     port(
         rd1: in std_logic_vector(31 downto 0); -- Data from register rs1
         pc: in std_logic_vector(31 downto 0); -- PC
-        src_a_sel: in std_logic_vector;
+        src_a_sel: in std_logic;
         src_a: out std_logic_vector(31 downto 0) -- mux output
     );
 end entity mux_alu_src_a;
@@ -20,7 +20,7 @@ begin
 
     process(src_a_sel)
     begin
-        if src_a_sel = "0" then
+        if src_a_sel = '0' then
             src_a <= rd1; -- Select register data
         else
             src_a <= pc; -- Select PC value

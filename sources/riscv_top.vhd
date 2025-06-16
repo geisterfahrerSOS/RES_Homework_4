@@ -6,7 +6,8 @@ use IEEE.NUMERIC_STD.all;
 entity riscv_top is
     port (
         clk : in std_logic;
-        rst : in std_logic
+        rst : in std_logic;
+        pc_out: out std_logic_vector(31 downto 0) -- Program counter output
     );
 end riscv_top;
 
@@ -22,8 +23,8 @@ architecture Behavioral of riscv_top is
         rs1 : in std_logic_vector(4 downto 0); -- Source register 1 output
         rs2 : in std_logic_vector(4 downto 0); -- Source register 2 output
         funct7 : in std_logic_vector(6 downto 0); -- Function7 output
-        src_a_sel: out std_logic_vector;
-        src_b_sel: out std_logic_vector;
+        src_a_sel: out std_logic;
+        src_b_sel: out std_logic;
         rd_we : out std_logic; -- Write enable for destination register
         alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
         wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
@@ -40,7 +41,7 @@ architecture Behavioral of riscv_top is
             pc_sel : in std_logic_vector(1 downto 0);
             branch_cond : in std_logic;
             imm : in std_logic_vector(31 downto 0);
-            rs1 : in std_logic_vector(31 downto 0);
+            rs1_data : in std_logic_vector(31 downto 0);
             pc_out : out std_logic_vector(31 downto 0)
         );
     end component;
@@ -58,8 +59,8 @@ architecture Behavioral of riscv_top is
 
     component branch_logic is
         port (
-            rs1 : in std_logic_vector(31 downto 0);
-            rs2 : in std_logic_vector(31 downto 0);
+            rs1_data : in std_logic_vector(31 downto 0);
+            rs2_data : in std_logic_vector(31 downto 0);
             branch_sel : in std_logic_vector(2 downto 0);
             branch_cond : out std_logic
         );
@@ -109,7 +110,7 @@ architecture Behavioral of riscv_top is
         port (
             rd1 : in std_logic_vector(31 downto 0); -- Data from register rs1
             pc : in std_logic_vector(31 downto 0); -- PC
-            src_a_sel : in std_logic_vector;
+            src_a_sel : in std_logic;
             src_a : out std_logic_vector(31 downto 0) -- mux output
         );
     end component;
@@ -118,7 +119,7 @@ architecture Behavioral of riscv_top is
         port (
             rd2 : in std_logic_vector(31 downto 0); -- Data from register rd2
             imm : in std_logic_vector(31 downto 0); -- Immediate value
-            src_b_sel : in std_logic_vector;
+            src_b_sel : in std_logic;
             src_b : out std_logic_vector(31 downto 0) -- mux output
         );
     end component;
@@ -178,8 +179,8 @@ architecture Behavioral of riscv_top is
     signal wb_sel : std_logic_vector(1 downto 0);
     signal rd_we : std_logic;
     signal pc_sel : std_logic_vector(1 downto 0);
-    signal src_a_sel : std_logic_vector;
-    signal src_b_sel : std_logic_vector;
+    signal src_a_sel : std_logic;
+    signal src_b_sel : std_logic;
     signal branch_sel : std_logic_vector(2 downto 0);
 
     signal branch_cond : std_logic;
@@ -216,7 +217,7 @@ begin
         pc_sel => pc_sel,
         branch_cond => branch_cond,
         imm => imm,
-        rs1 => rs1,
+        rs1_data => rs1_data,
         pc_out => pc
     );
     -- Instantiate ROM for instruction memory
@@ -231,7 +232,8 @@ begin
     );
 
     -- Instance decoder and connect to register file
-    decoder_inst : decoder port map(
+    decoder_inst : decoder 
+    port map(
         instr => instr,
         opcode => opcode,
         rd => rd,
@@ -296,9 +298,11 @@ begin
 
     branch_logic_inst: branch_logic
      port map(
-        rs1 => rs1,
-        rs2 => rs2,
+        rs1_data => rs1_data,
+        rs2_data => rs2_data,
         branch_sel => branch_sel,
         branch_cond => branch_cond
     );
+
+    pc_out <= pc; -- Output the current PC value
 end Behavioral;

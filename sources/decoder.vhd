@@ -15,7 +15,7 @@ entity decoder is
         funct3: out std_logic_vector(2 downto 0); -- Function3 output
         rs1: out std_logic_vector(4 downto 0); -- Source register 1 output
         rs2: out std_logic_vector(4 downto 0); -- Source register 2 output
-        funct7: out std_logic_vector(6 downto 0); -- Function7 output
+        funct7: out std_logic_vector(6 downto 0) -- Function7 output
     );
 end entity decoder;
 

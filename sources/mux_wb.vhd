@@ -16,7 +16,7 @@ end entity mux_wb;
 
 architecture behavioral of mux_wb is
 begin
-    process(all)
+    process(wb_sel, alu_result, pc_plus_4, imm)
     begin
         case wb_sel is
             when WB_ALU =>
@@ -25,6 +25,9 @@ begin
                 wb_data <= pc_plus_4;
             when WB_IMM =>
                 wb_data <= imm;
+            when WB_MEM =>
+                -- Assuming memory data is not provided in this context, set to zero
+                wb_data <= (others => '0'); -- Placeholder for memory data
             when others =>
                 wb_data <= (others => '0');
         end case;
