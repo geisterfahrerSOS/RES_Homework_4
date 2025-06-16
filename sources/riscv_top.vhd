@@ -14,7 +14,6 @@ architecture Behavioral of riscv_top is
     -- Component declarations for the RISC-V processor
     component control_unit is
         port (
-            clk : in std_logic;
             rst : in std_logic;
             opcode : in std_logic_vector(6 downto 0); -- Opcode output
             rd : in std_logic_vector(4 downto 0); -- Destination register output
@@ -191,7 +190,7 @@ architecture Behavioral of riscv_top is
 
     signal branch_cond : std_logic;
 
-    signal wb_data : std_logic_vector(31 downto 0);
+    signal wb_data : std_logic_vector(31 downto 0); -- Data to be written back to the register file
 
     signal mem_data_out : std_logic_vector(31 downto 0); -- Data read from RAM
 
@@ -200,7 +199,6 @@ begin
     -- Instantiate the control unit
     control_unit_inst : control_unit
     port map(
-        clk => clk,
         rst => rst,
         opcode => opcode,
         rd => rd,

@@ -18,7 +18,7 @@ end entity mux_alu_src_a;
 architecture behavioral of mux_alu_src_a is
 begin
 
-    process(src_a_sel)
+    process(src_a_sel, rs1_data, pc)
     begin
         if src_a_sel = '0' then
             src_a <= rs1_data; -- Select register data

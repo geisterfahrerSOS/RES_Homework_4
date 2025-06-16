@@ -18,7 +18,7 @@ end entity mux_alu_src_b;
 architecture behavioral of mux_alu_src_b is
 begin
 
-    process(src_b_sel)
+    process(src_b_sel, imm, rs2_data)
     begin
         if src_b_sel = '0' then
             src_b <= imm; -- Select immediate value

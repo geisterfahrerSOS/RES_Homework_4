@@ -10,8 +10,8 @@ entity mux_wb is
         pc_plus_4    : in std_logic_vector(31 downto 0);
         imm          : in std_logic_vector(31 downto 0);
         wb_sel       : in std_logic_vector(1 downto 0);
-        wb_data      : out std_logic_vector(31 downto 0);
-        wb_mem_data : in std_logic_vector(31 downto 0) -- Memory data input
+        wb_mem_data : in std_logic_vector(31 downto 0); -- Memory data input
+        wb_data      : out std_logic_vector(31 downto 0)
     );
 end entity mux_wb;
 
