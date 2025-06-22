@@ -15,6 +15,7 @@ entity lsu is
         data_mem_in : in std_logic_vector(31 downto 0);
         data_reg_out : out std_logic_vector(31 downto 0);
         data_mem_out : out std_logic_vector(31 downto 0);
+        rom_data_in : in std_logic_vector(31 downto 0); -- Input data from memory (for load operations)
         byte_enable : out std_logic_vector(3 downto 0); -- Byte enable for store operations
         mem_we : out std_logic -- Write enable signal for store operations
     );
@@ -23,6 +24,7 @@ end lsu;
 architecture Behavioral of lsu is
 begin
     process (clk, rst, opcode, funct3, addr, data_reg_in, data_mem_in)
+    variable temp_data_in : std_logic_vector(31 downto 0);
     begin
 
         if rst = '1' then
@@ -60,37 +62,45 @@ begin
                         mem_we <= '0'; -- Clear write enable for invalid operations
                 end case;
             elsif opcode = OPCODE_LOAD then -- Load instructions
+                report "Adress: x" & to_hstring(to_bitvector(addr));
+                if addr < x"00008000" then -- Check if address is in ROM range this is for reading the hello world ascii string
+                    report "Loading from ROM";
+                    temp_data_in := rom_data_in; -- Use ROM data for load operations
+                else
+                    report "Loading from RAM";
+                    temp_data_in := data_mem_in; -- Use RAM data for load operations
+                end if;
                 -- For load operations, we assume data_mem_in is the memory content read from the RAM
                 case funct3 is
                     when "000" => -- LB (Load Byte, sign-extended)
                         case addr(1 downto 0) is
-                            when "00" => data_reg_out <= std_logic_vector(resize(signed(data_mem_in(7 downto 0)), 32));
-                            when "01" => data_reg_out <= std_logic_vector(resize(signed(data_mem_in(15 downto 8)), 32));
-                            when "10" => data_reg_out <= std_logic_vector(resize(signed(data_mem_in(23 downto 16)), 32));
-                            when "11" => data_reg_out <= std_logic_vector(resize(signed(data_mem_in(31 downto 24)), 32));
+                            when "00" => data_reg_out <= std_logic_vector(resize(signed(temp_data_in(7 downto 0)), 32));
+                            when "01" => data_reg_out <= std_logic_vector(resize(signed(temp_data_in(15 downto 8)), 32));
+                            when "10" => data_reg_out <= std_logic_vector(resize(signed(temp_data_in(23 downto 16)), 32));
+                            when "11" => data_reg_out <= std_logic_vector(resize(signed(temp_data_in(31 downto 24)), 32));
                             when others => data_reg_out <= (others => '0');
                         end case;
                     when "001" => -- LH (Load Halfword, sign-extended)
                         if addr(1) = '0' then
-                            data_reg_out <= std_logic_vector(resize(signed(data_mem_in(15 downto 0)), 32));
+                            data_reg_out <= std_logic_vector(resize(signed(temp_data_in(15 downto 0)), 32));
                         else
-                            data_reg_out <= std_logic_vector(resize(signed(data_mem_in(31 downto 16)), 32));
+                            data_reg_out <= std_logic_vector(resize(signed(temp_data_in(31 downto 16)), 32));
                         end if;
                     when "010" => -- LW (Load Word)
-                        data_reg_out <= data_mem_in;
+                        data_reg_out <= temp_data_in;
                     when "100" => -- LBU (Load Byte, zero-extended)
                         case addr(1 downto 0) is
-                            when "00" => data_reg_out <= (31 downto 8 => '0') & data_mem_in(7 downto 0);
-                            when "01" => data_reg_out <= (31 downto 8 => '0') & data_mem_in(15 downto 8);
-                            when "10" => data_reg_out <= (31 downto 8 => '0') & data_mem_in(23 downto 16);
-                            when "11" => data_reg_out <= (31 downto 8 => '0') & data_mem_in(31 downto 24);
+                            when "00" => data_reg_out <= (31 downto 8 => '0') & temp_data_in(7 downto 0);
+                            when "01" => data_reg_out <= (31 downto 8 => '0') & temp_data_in(15 downto 8);
+                            when "10" => data_reg_out <= (31 downto 8 => '0') & temp_data_in(23 downto 16);
+                            when "11" => data_reg_out <= (31 downto 8 => '0') & temp_data_in(31 downto 24);
                             when others => data_reg_out <= (others => '0');
                         end case;
                     when "101" => -- LHU (Load Halfword, zero-extended)
                         if addr(1) = '0' then
-                            data_reg_out <= (31 downto 16 => '0') & data_mem_in(15 downto 0);
+                            data_reg_out <= (31 downto 16 => '0') & temp_data_in(15 downto 0);
                         else
-                            data_reg_out <= (31 downto 16 => '0') & data_mem_in(31 downto 16);
+                            data_reg_out <= (31 downto 16 => '0') & temp_data_in(31 downto 16);
                         end if;
                     when others =>
                         data_reg_out <= (others => '0');

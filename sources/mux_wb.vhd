@@ -17,7 +17,7 @@ end entity mux_wb;
 
 architecture behavioral of mux_wb is
 begin
-    process(wb_sel, alu_result, pc_plus_4, imm)
+    process(wb_sel, alu_result, pc_plus_4, imm, wb_lsu_data)
     begin
         case wb_sel is
             when WB_ALU =>

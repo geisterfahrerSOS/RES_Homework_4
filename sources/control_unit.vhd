@@ -25,8 +25,7 @@ entity control_unit is
         rd_we : out std_logic; -- Write enable for destination register
         alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
         wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
-        pc_sel : out std_logic_vector(2 downto 0); -- PC select output
-        branch_sel : out std_logic_vector(2 downto 0) -- Branch select output
+        pc_sel : out std_logic_vector(2 downto 0) -- PC select output
     );
 end control_unit;
 

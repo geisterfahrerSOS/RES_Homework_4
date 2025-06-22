@@ -26,13 +26,13 @@ architecture behavioral of ram is
     signal ram_memory : ram_type;
     constant RAM_SIZE_BYTES : natural := (2 ** ADDR_WIDTH) * 4; -- Total amount of adressable memmory (bytes)
     constant HALF_RAM_SIZE_BYTES : natural := RAM_SIZE_BYTES / 2;
-    
-    constant RAM_BASE_ADDR : std_logic_vector(31 downto 0) := x"20000000";
+
+    constant RAM_BASE_ADDR : std_logic_vector(31 downto 0) := x"02000000";
     constant RAM_LOWER_BOUND : std_logic_vector(31 downto 0) := std_logic_vector(unsigned(RAM_BASE_ADDR) - to_unsigned(HALF_RAM_SIZE_BYTES, 32));
     constant RAM_UPPER_BOUND : std_logic_vector(31 downto 0) := std_logic_vector(unsigned(RAM_BASE_ADDR) + to_unsigned(HALF_RAM_SIZE_BYTES - 1, 32));
-    
-    begin
-        process (clk, rst)
+
+begin
+    process (clk, rst, we, addr, data_in, byte_enable)
         variable mapped_addr_int : integer;
         variable temp_word_for_write : std_logic_vector(31 downto 0);
     begin
@@ -44,9 +44,9 @@ architecture behavioral of ram is
                 end loop;
                 data_out <= (others => '0');
             else
+                report "Address: x" & to_hstring(to_bitvector(addr));
                 if unsigned(addr) >= unsigned(RAM_LOWER_BOUND) and unsigned(addr) <= unsigned(RAM_UPPER_BOUND) then
                     mapped_addr_int := to_integer(unsigned(addr) - unsigned(RAM_LOWER_BOUND)) / 4;
-                    report "Address: x" & to_hstring(to_bitvector(addr));
                     report "Mapped address: " & integer'image(mapped_addr_int);
                     if mapped_addr_int >= 0 and mapped_addr_int <= ram_memory'high then
                         if we = '1' then
@@ -72,6 +72,17 @@ architecture behavioral of ram is
                     end if;
                 end if;
             end if;
+        else
+            report "Address: x" & to_hstring(to_bitvector(addr));
+                if unsigned(addr) >= unsigned(RAM_LOWER_BOUND) and unsigned(addr) <= unsigned(RAM_UPPER_BOUND) then
+                    mapped_addr_int := to_integer(unsigned(addr) - unsigned(RAM_LOWER_BOUND)) / 4;
+                    report "Mapped address: " & integer'image(mapped_addr_int);
+                    if mapped_addr_int >= 0 and mapped_addr_int <= ram_memory'high then
+                        if we = '0' then
+                            data_out <= ram_memory(mapped_addr_int);
+                        end if;
+                    end if;
+                end if;
         end if;
     end process;
 end behavioral;

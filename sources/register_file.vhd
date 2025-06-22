@@ -21,7 +21,7 @@ end register_file;
 architecture rtl of register_file is
     type register_array is array (31 downto 0) of std_logic_vector(31 downto 0);
     signal registers : register_array;
-    constant SP_INITIAL : std_logic_vector(31 downto 0) := x"20000000"; -- Initial value for stack pointer (sp)
+    constant SP_INITIAL : std_logic_vector(31 downto 0) := x"02000000"; -- Initial value for stack pointer (sp)
 begin
     -- Write process (sequential)
     write_process : process (clk)

@@ -26,8 +26,7 @@ architecture Behavioral of riscv_top is
             rd_we : out std_logic; -- Write enable for destination register
             alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
             wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
-            pc_sel : out std_logic_vector(2 downto 0); -- PC select output
-            branch_sel : out std_logic_vector(2 downto 0) -- Branch select output
+            pc_sel : out std_logic_vector(2 downto 0) -- PC select output
         );
     end component;
 
@@ -165,6 +164,7 @@ architecture Behavioral of riscv_top is
             data_mem_in : in std_logic_vector(31 downto 0);
             data_reg_out : out std_logic_vector(31 downto 0);
             data_mem_out : out std_logic_vector(31 downto 0);
+            rom_data_in : in std_logic_vector(31 downto 0); -- Input data from memory (for load operations)
             byte_enable : out std_logic_vector(3 downto 0); -- Byte enable for store operations
             mem_we : out std_logic -- Write enable signal for store operations
         );
@@ -201,7 +201,6 @@ architecture Behavioral of riscv_top is
     signal pc_sel : std_logic_vector(2 downto 0);
     signal src_a_sel : std_logic;
     signal src_b_sel : std_logic;
-    signal branch_sel : std_logic_vector(2 downto 0);
 
     signal mem_we : std_logic;
 
@@ -215,6 +214,8 @@ architecture Behavioral of riscv_top is
     -- signal data_reg_in : std_logic_vector(31 downto 0); -- Data input to lsu from register file
     signal data_mem_in : std_logic_vector(31 downto 0); -- Data input to lsu from RAM
     signal data_mem_out : std_logic_vector(31 downto 0); -- Data output from lsu to RAM
+
+    signal rom_data : std_logic_vector(31 downto 0); -- Data read from ROM
 
 begin
 
@@ -233,8 +234,7 @@ begin
         rd_we => rd_we,
         alu_op => alu_op,
         wb_sel => wb_sel,
-        pc_sel => pc_sel,
-        branch_sel => branch_sel
+        pc_sel => pc_sel
     );
 
     -- Instantiate the program counter
@@ -257,6 +257,16 @@ begin
     port map(
         addr => pc(9 downto 0), -- Assuming pc is at least 10 bits wide
         data => instr -- You'll need to declare this signal
+    );
+
+    rom_inst_data : rom
+    generic map(
+        addr_width => 10,
+        data_width => 32
+    )
+    port map(
+        addr => alu_result(9 downto 0), -- Assuming alu_result is at least 10 bits wide
+        data => rom_data -- Data read from ROM for data memory operations
     );
 
     -- Instantiate RAM for data memory
@@ -285,6 +295,7 @@ begin
         data_mem_out => data_mem_out,
         data_mem_in => data_mem_in,
         data_reg_out => data_reg_out,
+        rom_data_in => rom_data, -- Data read from ROM for load operations
         byte_enable => byte_enable,
         mem_we => mem_we
     );
@@ -359,7 +370,7 @@ begin
     port map(
         rs1_data => rs1_data,
         rs2_data => rs2_data,
-        branch_sel => branch_sel,
+        branch_sel => funct3,
         branch_cond => branch_cond
     );
 end Behavioral;
