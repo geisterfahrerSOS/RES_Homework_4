@@ -1,0 +1,38 @@
+TASK 1
+
+    Memory constraint issue, how to solve, what options to save on memory?
+
+    320x240 px = 230KB with 3byte RGB (internal mem only 180KB)
+
+    A: Monochrome bitmap. Reduce size by cutting color information. 1bit per pixel => 320x240 / 8 = 9.6KB
+        Possibly the easiest and most straightforward way to save on a significant amount of memory, but at the loss of color information.
+
+    B: Text buffer with Character Gen. store character codes, hardware renders from font ROM.
+        store only the character codes and the hardware uses those to render the text based on information from a font ROM.
+        needs dedicated hardware.
+
+    C: partial framebuffer
+        Only store the part of the text that can be displayed and cut the edges. retains color but memory savings might not be enough.
+
+    D: Line buffer
+        Only render one row at a time. reduces memory needed by effectively cutting down on the total information processed but needs CPU work and a certain CPU speed to function properly.
+
+    -----------------------------------------
+
+    When are ASCII mirrors useful?
+    (a ram buffer that stores the ascii value of the given character at the given position)
+
+    Useful for cursor related things as well as editing values. Allows re-rendering on value change or software-only rendering.
+    can help with optimization (only update upon change). 
+
+    -----------------------------------------
+
+    hardware vs software rendering
+
+    hw: doesn't burden the CPU but needs more of the FPGA unit. harder to implement and less flexible. would allow to bypass framebuffer and use an ASCII mirror.
+
+    sw: easier but we need a framebuffer and it needs the CPU.
+
+    go sw?
+
+    
