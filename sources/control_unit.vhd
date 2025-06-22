@@ -26,8 +26,7 @@ entity control_unit is
         alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
         wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
         pc_sel : out std_logic_vector(2 downto 0); -- PC select output
-        branch_sel : out std_logic_vector(2 downto 0); -- Branch select output
-        mem_we : out std_logic -- Memory write enable
+        branch_sel : out std_logic_vector(2 downto 0) -- Branch select output
     );
 end control_unit;
 
@@ -68,7 +67,6 @@ begin
                 wb_sel <= WB_ALU; -- Write back ALU result for R-type instructions
                 pc_sel <= PC_PLUS_4; -- No PC change for R-type instructions
                 rd_we <= '1'; -- Enable write to destination register
-                mem_we <= '0'; -- Disable memory write for R-type instructions
 
             when OPCODE_OP_IMM =>
                 -- I-type instructions (addi, slti, andi, ori, etc.)
@@ -95,7 +93,6 @@ begin
                 wb_sel <= WB_ALU; -- Write back ALU result for I-type instructions
                 pc_sel <= PC_PLUS_4; -- No PC change for I-type instructions
                 rd_we <= '1'; -- Enable write to destination register
-                mem_we <= '0'; -- Disable memory write for I-type instructions
 
             when OPCODE_LOAD =>
                 -- Load instructions (lw, lb, lbu, lh, lhu)
@@ -106,7 +103,6 @@ begin
                 wb_sel <= WB_MEM; -- Write back memory result for load instructions
                 pc_sel <= PC_PLUS_4; -- No PC change for load instructions
                 rd_we <= '1'; -- Enable write to destination register
-                mem_we <= '0'; -- Disable memory write for load instructions
             when OPCODE_JALR =>
                 -- J-type instructions (jalr)
                 alu_op <= ALU_NOP; -- Jump and Link Register
@@ -115,7 +111,6 @@ begin
                 src_b_sel <= '0'; -- Select immediate for ALU source B
                 pc_sel <= PC_JALR; -- Set PC to rs1 + immediate
                 rd_we <= '1'; -- Enable write to destination register
-                mem_we <= '0'; -- Disable memory write for JALR instructions
             when OPCODE_SYSTEM =>
                 -- Not implemented
                 src_a_sel <= '0'; -- Select rs1 for ALU source A
@@ -124,7 +119,6 @@ begin
                 wb_sel <= WB_ALU; -- Write back ALU result for system instructions
                 pc_sel <= PC_PLUS_4; -- No PC change for system instructions
                 rd_we <= '0'; -- Disable write to destination register for system instructions
-                mem_we <= '0'; -- Disable memory write for system instructions
 
             when OPCODE_STORE =>
                 -- Not implemented no RAM exists
@@ -134,7 +128,6 @@ begin
                 wb_sel <= WB_MEM; -- Write back ALU result for store address
                 pc_sel <= PC_PLUS_4; -- No PC change for store instructions
                 rd_we <= '0'; -- Disable write to destination register for store instructions
-                mem_we <= '1'; -- Enable memory write for store instructions
 
             when OPCODE_BRANCH =>
                 -- Do nothing handled in branch control unit it gets the two registers and the funct3
@@ -152,7 +145,6 @@ begin
                 alu_op <= ALU_NOP; -- No ALU operation for LUI
                 pc_sel <= PC_PLUS_4; -- No PC change for LUI
                 rd_we <= '1'; -- Enable write to destination register for LUI
-                mem_we <= '0'; -- Disable memory write for LUI instructions
 
             when OPCODE_AUIPC =>
                 -- adding of pc and immediate handled in the ALU
@@ -162,7 +154,6 @@ begin
                 src_b_sel <= '0'; -- Select immediate for ALU source B
                 pc_sel <= PC_PLUS_4; -- No PC change for AUIPC
                 rd_we <= '1'; -- Enable write to destination register for AUIPC
-                mem_we <= '0'; -- Disable memory write for AUIPC instructions
 
             when OPCODE_JAL =>
                 -- J-type instructions (jal)
@@ -174,7 +165,6 @@ begin
                 alu_op <= ALU_NOP; -- No ALU operation for JAL
                 pc_sel <= PC_JAL; -- Set PC to immediate offset
                 rd_we <= '1'; -- Enable write to destination register for JAL
-                mem_we <= '0'; -- Disable memory write for JAL instructions
 
             when OPCODE_MISC_MEM =>
                 -- Not implemented
@@ -184,7 +174,6 @@ begin
                 wb_sel <= WB_ALU; -- Write back ALU result for MISC_MEM
                 pc_sel <= PC_PLUS_4; -- No PC change for MISC_MEM
                 rd_we <= '0'; -- Disable write to destination register for MISC_MEM
-                mem_we <= '0'; -- Disable memory write for MISC_MEM instructions
 
             when others =>
                 alu_op <= ALU_INV; -- Default to invalid operation
@@ -193,7 +182,6 @@ begin
                 src_b_sel <= '0'; -- Default select rs2 for ALU source B
                 pc_sel <= PC_PLUS_4; -- Default no PC change
                 rd_we <= '0'; -- Default disable write to destination register
-                mem_we <= '0'; -- Default disable memory write
 
         end case;
     end process;

@@ -27,8 +27,7 @@ architecture Behavioral of riscv_top is
             alu_op : out std_logic_vector(3 downto 0); -- ALU operation code output
             wb_sel : out std_logic_vector(1 downto 0); -- Write-back select output -- maybe not needed due to opcode info
             pc_sel : out std_logic_vector(2 downto 0); -- PC select output
-            branch_sel : out std_logic_vector(2 downto 0); -- Branch select output
-            mem_we : out std_logic -- Memory write enable signal, if needed
+            branch_sel : out std_logic_vector(2 downto 0) -- Branch select output
         );
     end component;
 
@@ -97,15 +96,16 @@ architecture Behavioral of riscv_top is
 
     component ram is
         generic (
-            DATA_WIDTH : integer := 32; -- Width of data bus
-            ADDR_WIDTH : integer := 32 -- Width of address bus
+            ADDR_WIDTH : integer := 12 -- Width of address bus
         );
         port (
             clk : in std_logic; -- Clock input
+            rst : in std_logic; -- Reset input
             we : in std_logic; -- Write enable
-            addr : in std_logic_vector(ADDR_WIDTH - 1 downto 0); -- Address input
-            data_in : in std_logic_vector(DATA_WIDTH - 1 downto 0); -- Data input
-            data_out : out std_logic_vector(DATA_WIDTH - 1 downto 0) -- Data output
+            addr : in std_logic_vector(31 downto 0); -- Address input
+            data_in : in std_logic_vector(31 downto 0); -- Data input
+            data_out : out std_logic_vector(31 downto 0); -- Data output
+            byte_enable : in std_logic_vector(3 downto 0) -- Byte enable
         );
     end component;
 
@@ -134,7 +134,7 @@ architecture Behavioral of riscv_top is
             imm : in std_logic_vector(31 downto 0);
             wb_sel : in std_logic_vector(1 downto 0);
             wb_data : out std_logic_vector(31 downto 0);
-            wb_mem_data : in std_logic_vector(31 downto 0) -- Memory data input
+            wb_lsu_data : in std_logic_vector(31 downto 0) -- Memory data input
         );
     end component;
 
@@ -151,6 +151,22 @@ architecture Behavioral of riscv_top is
             rd_addr : in std_logic_vector(4 downto 0);
             rd_data : in std_logic_vector(31 downto 0);
             rd_we : in std_logic
+        );
+    end component;
+
+    component lsu is
+        port (
+            clk : in std_logic;
+            rst : in std_logic;
+            opcode : in std_logic_vector(6 downto 0);
+            funct3 : in std_logic_vector(2 downto 0);
+            addr : in std_logic_vector(31 downto 0);
+            data_reg_in : in std_logic_vector(31 downto 0);
+            data_mem_in : in std_logic_vector(31 downto 0);
+            data_reg_out : out std_logic_vector(31 downto 0);
+            data_mem_out : out std_logic_vector(31 downto 0);
+            byte_enable : out std_logic_vector(3 downto 0); -- Byte enable for store operations
+            mem_we : out std_logic -- Write enable signal for store operations
         );
     end component;
 
@@ -186,13 +202,19 @@ architecture Behavioral of riscv_top is
     signal src_a_sel : std_logic;
     signal src_b_sel : std_logic;
     signal branch_sel : std_logic_vector(2 downto 0);
-    signal mem_we : std_logic; -- Memory write enable signal, if needed
+
+    signal mem_we : std_logic;
 
     signal branch_cond : std_logic;
 
-    signal wb_data : std_logic_vector(31 downto 0); -- Data to be written back to the register file
+    signal wb_data : std_logic_vector(31 downto 0); -- Data to be written back to the register file could be ALU result, pc+4, immediate value, or memory data
 
-    signal mem_data_out : std_logic_vector(31 downto 0); -- Data read from RAM
+    -- Signals for LSU
+    signal byte_enable : std_logic_vector(3 downto 0); -- Byte enable for memory operations
+    signal data_reg_out : std_logic_vector(31 downto 0); -- Data output from lsu to register file
+    -- signal data_reg_in : std_logic_vector(31 downto 0); -- Data input to lsu from register file
+    signal data_mem_in : std_logic_vector(31 downto 0); -- Data input to lsu from RAM
+    signal data_mem_out : std_logic_vector(31 downto 0); -- Data output from lsu to RAM
 
 begin
 
@@ -240,15 +262,31 @@ begin
     -- Instantiate RAM for data memory
     ram_inst : ram
     generic map(
-        DATA_WIDTH => 32, -- Width of data bus
-        ADDR_WIDTH => 32 -- Width of address bus
+        ADDR_WIDTH => 12 -- Width of address bus
     )
     port map(
         clk => clk,
+        rst => rst,
         we => mem_we, -- Write enable signal
         addr => alu_result, -- Address for RAM access, typically the ALU result
-        data_in => rs2_data, -- Data to write into RAM
-        data_out => mem_data_out -- Data read from RAM
+        data_in => data_mem_out, -- Data to write into RAM
+        data_out => data_mem_in, -- Data read from RAM
+        byte_enable => byte_enable -- Byte enable for memory operations
+    );
+
+    lsu_inst : lsu
+    port map(
+        clk => clk,
+        rst => rst,
+        opcode => opcode,
+        funct3 => funct3,
+        addr => alu_result,
+        data_reg_in => rs2_data,
+        data_mem_out => data_mem_out,
+        data_mem_in => data_mem_in,
+        data_reg_out => data_reg_out,
+        byte_enable => byte_enable,
+        mem_we => mem_we
     );
 
     -- Instance decoder and connect to register file
@@ -310,10 +348,10 @@ begin
     mux_wb_inst : mux_wb
     port map(
         alu_result => alu_result,
+        wb_lsu_data => data_reg_out,
         pc_plus_4 => std_logic_vector(unsigned(pc) + 4),
         imm => imm,
         wb_sel => wb_sel,
-        wb_mem_data => mem_data_out,
         wb_data => wb_data
     );
 
