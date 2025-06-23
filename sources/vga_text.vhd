@@ -49,7 +49,7 @@ architecture rtl of vga_text is
     signal pixel_y: integer range 0 to V_VISIBLE - 1 := 0;
 
     signal char_col, char_row: integer range 0 to 39;
-    signal row_within_char: integer ranger  0 to 7; -- Row within the character (0-7 for 8 rows in a character)
+    signal row_within_char: integer range  0 to 7; -- Row within the character (0-7 for 8 rows in a character)
 
     signal font_row_bits: std_logic_vector(7 downto 0); -- Bits for the current row of the character
 
@@ -100,6 +100,7 @@ begin
     -- pixel color output
 
     process(clk)
+    variable bit_index: integer; -- Index for the current bit in the character
     begin
         if rising_edge(clk) then
             if visible_area = '1' then

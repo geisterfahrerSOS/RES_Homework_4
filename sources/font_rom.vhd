@@ -6,13 +6,13 @@ entity font_rom is
     port (
         clk: in std_logic; -- Clock input
         char_code: in std_logic_vector(6 downto 0); -- Character code input (ASCII)
-        row_index: in std_logic_vector(2 downto 0); -- Row index input (0 to 7)
-        font_line: out std_logic_vector(7 downto 0) -- Font line output (8 bits for each row of the character)
+        font_row: in std_logic_vector(2 downto 0); -- Row index input (0 to 7)
+        font_bits: out std_logic_vector(7 downto 0) -- Font line output (8 bits for each row of the character)
     );
 end entity font_rom;
 
 architecture behavioral of font_rom is
-    type font_array is array (0 to 127, 0 tp 7) of std_logic_vector(7 downto 0);
+    type font_array is array (0 to 127, 0 to 7) of std_logic_vector(7 downto 0);
     signal font: font_array := (
         -- Character 0 (NULL)
         0 => (x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00"),
@@ -280,7 +280,7 @@ begin
     begin
         if rising_edge(clk) then
             -- Output the font line based on character code and row index
-            font_line <= font(to_integer(unsigned(char_code)), to_integer(unsigned(row_index)));
+            font_bits <= font(to_integer(unsigned(char_code)), to_integer(unsigned(font_row)));
         end if;
     end process;
 end architecture behavioral;
