@@ -6,7 +6,9 @@ use IEEE.NUMERIC_STD.all;
 entity riscv_top is
     port (
         clk : in std_logic;
-        rst : in std_logic
+        rst : in std_logic;
+        uart_tx : out std_logic; -- UART transmit output
+        uart_rx : in std_logic -- UART receive input
     );
 end riscv_top;
 

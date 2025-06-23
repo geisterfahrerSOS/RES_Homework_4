@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 entity UART_TX is
   generic (
-    g_CLKS_PER_BIT : integer := 115  -- Needs to be set correctly
+    g_CLKS_PER_BIT : integer := 868  -- Needs to be set correctly, 115200 baud rate means 868 clock cycles per bit at 100 MHz clock frequency
   );
 
   port (

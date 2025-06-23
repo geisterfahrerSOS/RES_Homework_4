@@ -34,7 +34,7 @@ architecture behavioral of ram is
 begin
     process (clk, rst, we, addr, data_in, byte_enable)
         variable mapped_addr_int : integer;
-        variable temp_word_for_write : std_logic_vector(31 downto 0);
+        variable temp_word_for_write : std_logic_vector(31 downto 0) := (others => '0');
     begin
         if falling_edge(clk) then
             if rst = '1' then
@@ -50,21 +50,25 @@ begin
                     report "Mapped address: " & integer'image(mapped_addr_int);
                     if mapped_addr_int >= 0 and mapped_addr_int <= ram_memory'high then
                         if we = '1' then
+                            report "Write operation at mapped address: " & integer'image(mapped_addr_int);
                             temp_word_for_write := ram_memory(mapped_addr_int);
 
-                            if byte_enable(0) = '1' then
+                            if byte_enable = "1111" then -- SW (Store Word): All bytes are enabled.
+                                temp_word_for_write := data_in;
+                            elsif byte_enable = "0011" then -- SH (Store Halfword) at byte offset 0 (bits 0-15)
+                                temp_word_for_write(15 downto 0) := data_in(15 downto 0);
+                            elsif byte_enable = "1100" then -- SH (Store Halfword) at byte offset 2 (bits 16-31)
+                                temp_word_for_write(31 downto 16) := data_in(15 downto 0);
+                            elsif byte_enable(0) = '1' then -- SB (Store Byte) at byte offset 0 (bits 0-7)
                                 temp_word_for_write(7 downto 0) := data_in(7 downto 0);
+                            elsif byte_enable(1) = '1' then -- SB (Store Byte) at byte offset 1 (bits 8-15)
+                                temp_word_for_write(15 downto 8) := data_in(7 downto 0);
+                            elsif byte_enable(2) = '1' then -- SB (Store Byte) at byte offset 2 (bits 16-23)
+                                temp_word_for_write(23 downto 16) := data_in(7 downto 0);
+                            elsif byte_enable(3) = '1' then -- SB (Store Byte) at byte offset 3 (bits 24-31)
+                                temp_word_for_write(31 downto 24) := data_in(7 downto 0);
                             end if;
-                            if byte_enable(1) = '1' then
-                                temp_word_for_write(15 downto 8) := data_in(15 downto 8);
-                            end if;
-                            if byte_enable(2) = '1' then
-                                temp_word_for_write(23 downto 16) := data_in(23 downto 16);
-                            end if;
-                            if byte_enable(3) = '1' then
-                                temp_word_for_write(31 downto 24) := data_in(31 downto 24);
-                            end if;
-
+                            report "Data to write: x" & to_hstring(to_bitvector(temp_word_for_write));
                             ram_memory(mapped_addr_int) <= temp_word_for_write;
                         else
                             data_out <= ram_memory(mapped_addr_int);
@@ -74,15 +78,15 @@ begin
             end if;
         else
             report "Address: x" & to_hstring(to_bitvector(addr));
-                if unsigned(addr) >= unsigned(RAM_LOWER_BOUND) and unsigned(addr) <= unsigned(RAM_UPPER_BOUND) then
-                    mapped_addr_int := to_integer(unsigned(addr) - unsigned(RAM_LOWER_BOUND)) / 4;
-                    report "Mapped address: " & integer'image(mapped_addr_int);
-                    if mapped_addr_int >= 0 and mapped_addr_int <= ram_memory'high then
-                        if we = '0' then
-                            data_out <= ram_memory(mapped_addr_int);
-                        end if;
+            if unsigned(addr) >= unsigned(RAM_LOWER_BOUND) and unsigned(addr) <= unsigned(RAM_UPPER_BOUND) then
+                mapped_addr_int := to_integer(unsigned(addr) - unsigned(RAM_LOWER_BOUND)) / 4;
+                report "Mapped address: " & integer'image(mapped_addr_int);
+                if mapped_addr_int >= 0 and mapped_addr_int <= ram_memory'high then
+                    if we = '0' then
+                        data_out <= ram_memory(mapped_addr_int);
                     end if;
                 end if;
+            end if;
         end if;
     end process;
 end behavioral;

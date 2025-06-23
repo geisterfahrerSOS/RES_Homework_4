@@ -22,8 +22,9 @@ entity lsu is
 end lsu;
 
 architecture Behavioral of lsu is
+    constant ROM_MEMORY_END : std_logic_vector(31 downto 0) := x"00008000"; -- End address of ROM memory
 begin
-    process (clk, rst, opcode, funct3, addr, data_reg_in, data_mem_in)
+    process (clk, rst, opcode, funct3, addr, data_reg_in, data_mem_in, rom_data_in)
     variable temp_data_in : std_logic_vector(31 downto 0);
     begin
 
@@ -63,7 +64,7 @@ begin
                 end case;
             elsif opcode = OPCODE_LOAD then -- Load instructions
                 report "Adress: x" & to_hstring(to_bitvector(addr));
-                if addr < x"00008000" then -- Check if address is in ROM range this is for reading the hello world ascii string
+                if addr < ROM_MEMORY_END then -- Check if address is in ROM range this is for reading the hello world ascii string
                     report "Loading from ROM";
                     temp_data_in := rom_data_in; -- Use ROM data for load operations
                 else
