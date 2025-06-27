@@ -45,8 +45,8 @@ begin
                     branch_cond <= '0';
                 end if;
             
-            when BNEZ => -- BNEZ (Branch if Not Equal to Zero)
-                if rs1_data /= x"00000000" then
+            when BGEU => -- BGEU (Branch if Greater Than or Equal Unsigned)
+                if unsigned(rs1_data) >= unsigned(rs2_data) then
                     branch_cond <= '1';
                 else
                     branch_cond <= '0';

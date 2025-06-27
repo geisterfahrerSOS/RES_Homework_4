@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity UART_TX is
+entity UART is
   generic (
     g_CLKS_PER_BIT : integer := 868  -- Needs to be set correctly, 115200 baud rate means 868 clock cycles per bit at 100 MHz clock frequency
   );
@@ -15,9 +15,9 @@ entity UART_TX is
     o_TX_Serial : out std_logic;
     o_TX_Done : out std_logic
   );
-end UART_TX;
+end UART;
 
-architecture RTL of UART_TX is
+architecture RTL of UART is
 
   type t_SM_Main is (s_Idle, s_TX_Start_Bit, s_TX_Data_Bits,
                        s_TX_Stop_Bit, s_Cleanup);

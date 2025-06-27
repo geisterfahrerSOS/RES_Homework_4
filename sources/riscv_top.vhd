@@ -7,8 +7,8 @@ entity riscv_top is
     port (
         clk : in std_logic;
         rst : in std_logic;
-        uart_tx : out std_logic; -- UART transmit output
-        uart_rx : in std_logic -- UART receive input
+        -- uart_rx : in std_logic; -- UART receive input
+        uart_tx : out std_logic -- UART transmit output
     );
 end riscv_top;
 
@@ -163,16 +163,37 @@ architecture Behavioral of riscv_top is
             funct3 : in std_logic_vector(2 downto 0);
             addr : in std_logic_vector(31 downto 0);
             data_reg_in : in std_logic_vector(31 downto 0);
-            data_mem_in : in std_logic_vector(31 downto 0);
+            data_mem_in : in std_logic_vector(31 downto 0); -- Data from RAM/main memory to LSU
             data_reg_out : out std_logic_vector(31 downto 0);
-            data_mem_out : out std_logic_vector(31 downto 0);
-            rom_data_in : in std_logic_vector(31 downto 0); -- Input data from memory (for load operations)
+            data_mem_out : out std_logic_vector(31 downto 0); -- Data from LSU to RAM/main memory
+            rom_data_in : in std_logic_vector(31 downto 0); -- Input data from ROM (for load operations)
             byte_enable : out std_logic_vector(3 downto 0); -- Byte enable for store operations
-            mem_we : out std_logic -- Write enable signal for store operations
+            mem_we : out std_logic; -- Write enable signal for store operations
+
+            uart_rx_data_in : in std_logic_vector(7 downto 0);-- Received byte from UART
+            uart_rx_valid_in : in std_logic;-- UART RX data is valid
+            uart_tx_full_in : in std_logic;-- UART TX buffer is full
+
+            uart_tx_data_out : out std_logic_vector(7 downto 0); -- Byte to transmit via UART
+            uart_tx_strobe_out : out std_logic;-- Strobe to tell UART to transmit
+            uart_baudrate_out : out std_logic_vector(31 downto 0); -- Baud rate divisor to UART
+            uart_baudrate_we_out : out std_logic -- Write enable for UART clkdiv register
         );
     end component;
 
     component uart is
+        generic (
+            g_CLKS_PER_BIT : integer := 868 -- Needs to be set correctly, 115200 baud rate means 868 clock cycles per bit at 100 MHz clock frequency
+        );
+
+        port (
+            i_Clk : in std_logic;
+            i_TX_DV : in std_logic;
+            i_TX_Byte : in std_logic_vector(7 downto 0);
+            o_TX_Active : out std_logic;
+            o_TX_Serial : out std_logic;
+            o_TX_Done : out std_logic
+        );
     end component;
 
     -- Signals for decoder outputs
@@ -219,8 +240,10 @@ architecture Behavioral of riscv_top is
 
     signal rom_data : std_logic_vector(31 downto 0); -- Data read from ROM
 
+    signal uart_rx_data : std_logic_vector(7 downto 0); -- Received byte from UART
+    signal uart_tx_data : std_logic_vector(7 downto 0); -- Byte to transmit via UART
+    signal uart_tx_en : std_logic; -- UART transmit enable signal
 begin
-
     -- Instantiate the control unit
     control_unit_inst : control_unit
     port map(
@@ -249,6 +272,19 @@ begin
         imm => imm,
         rs1_data => rs1_data,
         pc_out => pc
+    );
+    -- Instantiate UART for communication
+    uart_inst : uart
+    generic map(
+        g_CLKS_PER_BIT => 868 -- 100 MHz clock / 115200 baud = 868.055 ? 868
+    )
+    port map(
+        i_Clk => clk,
+        i_TX_DV => uart_tx_en,
+        i_TX_Byte => uart_tx_data, -- Transmit the lower byte of the write-back data
+        o_TX_Active => open, -- Not used in this context
+        o_TX_Serial => uart_tx, -- UART transmit output
+        o_TX_Done => open -- Not used in this context
     );
     -- Instantiate ROM for instruction memory
     rom_inst : rom
@@ -299,7 +335,14 @@ begin
         data_reg_out => data_reg_out,
         rom_data_in => rom_data, -- Data read from ROM for load operations
         byte_enable => byte_enable,
-        mem_we => mem_we
+        mem_we => mem_we,
+        uart_rx_data_in => uart_rx_data, -- Received byte from UART
+        uart_rx_valid_in => '0', -- Assuming no UART RX data valid signal in this
+        uart_tx_full_in => '0', -- Assuming UART TX buffer is not full
+        uart_tx_data_out => uart_tx_data, -- Byte to
+        uart_tx_strobe_out => uart_tx_en, -- Strobe to tell UART to transmit
+        uart_baudrate_out => open, -- Baud rate divisor to UART (
+        uart_baudrate_we_out => open -- Write enable for UART clkdiv register
     );
 
     -- Instance decoder and connect to register file
