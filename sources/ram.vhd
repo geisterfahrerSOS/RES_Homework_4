@@ -31,6 +31,9 @@ architecture behavioral of ram is
     constant RAM_LOWER_BOUND : std_logic_vector(31 downto 0) := std_logic_vector(unsigned(RAM_BASE_ADDR) - to_unsigned(HALF_RAM_SIZE_BYTES, 32));
     constant RAM_UPPER_BOUND : std_logic_vector(31 downto 0) := std_logic_vector(unsigned(RAM_BASE_ADDR) + to_unsigned(HALF_RAM_SIZE_BYTES - 1, 32));
 
+    attribute ram_style : string;
+    attribute ram_style of ram_memory : signal is "block"; -- This attribute is used to
+
 begin
     process (clk, rst, we, addr, data_in, byte_enable)
         variable mapped_addr_int : integer;
@@ -44,7 +47,6 @@ begin
                 end loop;
                 data_out <= (others => '0');
             else
-                report "Address: x" & to_hstring(to_bitvector(addr));
                 if unsigned(addr) >= unsigned(RAM_LOWER_BOUND) and unsigned(addr) <= unsigned(RAM_UPPER_BOUND) then
                     mapped_addr_int := to_integer(unsigned(addr) - unsigned(RAM_LOWER_BOUND)) / 4;
                     report "Mapped address: " & integer'image(mapped_addr_int);
@@ -68,22 +70,10 @@ begin
                             elsif byte_enable(3) = '1' then -- SB (Store Byte) at byte offset 3 (bits 24-31)
                                 temp_word_for_write(31 downto 24) := data_in(7 downto 0);
                             end if;
-                            report "Data to write: x" & to_hstring(to_bitvector(temp_word_for_write));
                             ram_memory(mapped_addr_int) <= temp_word_for_write;
                         else
                             data_out <= ram_memory(mapped_addr_int);
                         end if;
-                    end if;
-                end if;
-            end if;
-        else
-            report "Address: x" & to_hstring(to_bitvector(addr));
-            if unsigned(addr) >= unsigned(RAM_LOWER_BOUND) and unsigned(addr) <= unsigned(RAM_UPPER_BOUND) then
-                mapped_addr_int := to_integer(unsigned(addr) - unsigned(RAM_LOWER_BOUND)) / 4;
-                report "Mapped address: " & integer'image(mapped_addr_int);
-                if mapped_addr_int >= 0 and mapped_addr_int <= ram_memory'high then
-                    if we = '0' then
-                        data_out <= ram_memory(mapped_addr_int);
                     end if;
                 end if;
             end if;

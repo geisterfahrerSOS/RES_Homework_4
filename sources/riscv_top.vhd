@@ -181,18 +181,23 @@ architecture Behavioral of riscv_top is
         );
     end component;
 
-    component uart is
+    component uart_buffered is
         generic (
-            g_CLKS_PER_BIT : integer := 868 -- Needs to be set correctly, 115200 baud rate means 868 clock cycles per bit at 100 MHz clock frequency
+            g_CLKS_PER_BIT : integer := 868;
+            g_FIFO_DEPTH : natural := 16 -- Depth of the buffer
         );
-
         port (
+            -- Global
             i_Clk : in std_logic;
-            i_TX_DV : in std_logic;
-            i_TX_Byte : in std_logic_vector(7 downto 0);
-            o_TX_Active : out std_logic;
-            o_TX_Serial : out std_logic;
-            o_TX_Done : out std_logic
+            i_Rst : in std_logic;
+
+            -- CPU Interface (Write to FIFO)
+            i_CPU_TX_DV : in std_logic;
+            i_CPU_TX_Byte : in std_logic_vector(7 downto 0);
+            o_FIFO_Full : out std_logic;
+
+            -- UART Serial Output
+            o_TX_Serial : out std_logic
         );
     end component;
 
@@ -273,19 +278,21 @@ begin
         rs1_data => rs1_data,
         pc_out => pc
     );
-    -- Instantiate UART for communication
-    uart_inst : uart
+
+    uart_buffered_inst : uart_buffered
     generic map(
-        g_CLKS_PER_BIT => 868 -- 100 MHz clock / 115200 baud = 868.055 ? 868
+        g_CLKS_PER_BIT => 868, -- 100 MHz clock / 115200 baud = 868.055 ? 868
+        g_FIFO_DEPTH => 16 -- Depth of the buffer
     )
     port map(
         i_Clk => clk,
-        i_TX_DV => uart_tx_en,
-        i_TX_Byte => uart_tx_data, -- Transmit the lower byte of the write-back data
-        o_TX_Active => open, -- Not used in this context
-        o_TX_Serial => uart_tx, -- UART transmit output
-        o_TX_Done => open -- Not used in this context
+        i_Rst => rst, -- Reset signal for the UART buffer
+        i_CPU_TX_DV => uart_tx_en, -- Data valid signal from CPU to UART
+        i_CPU_TX_Byte => uart_tx_data, -- Lower byte of the write-back data to transmit
+        o_FIFO_Full => open, -- Not used in this context
+        o_TX_Serial => uart_tx -- UART transmit output
     );
+
     -- Instantiate ROM for instruction memory
     rom_inst : rom
     generic map(

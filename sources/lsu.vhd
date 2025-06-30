@@ -77,16 +77,12 @@ begin
             null;
         else
             if opcode = OPCODE_LOAD then -- Load instructions
-                report "Adress: x" & to_hstring(to_bitvector(addr));
                 -- First, get the raw word data from the appropriate memory/peripheral
                 if is_rom_access = '1' then
                     internal_read_data := rom_data_in;
-                    report "LSU: Loading from ROM. Addr: x" & to_hstring(to_bitvector(addr));
                 elsif is_ram_access = '1' then
                     internal_read_data := data_mem_in; -- Use RAM data for load operations
-                    report "LSU: Loading from RAM. Addr: x" & to_hstring(to_bitvector(addr));
                 elsif is_uart_access = '1' then
-                    report "LSU: Loading from UART. Addr: x" & to_hstring(to_bitvector(addr));
                     -- Logic for reading from UART registers
                     case addr is
                         when UART_DATA_ADDR =>
@@ -111,7 +107,6 @@ begin
                     end case;
                 else
                     internal_read_data := (others => '0'); -- Access to unmapped memory region
-                    report "LSU: Attempted load from unmapped memory region: x" & to_hstring(to_bitvector(addr)) severity warning;
                 end if;
 
                 -- Now, process the loaded 'internal_read_data' based on funct3 for sign/zero extension and byte/halfword selection
@@ -154,7 +149,6 @@ begin
                 if is_ram_access = '1' then
                     mem_we <= '1';
                     data_mem_out <= data_reg_in; -- Output data to RAM
-                    report "LSU: Storing to RAM. Addr: x" & to_hstring(to_bitvector(addr));
                     case funct3 is
                         when "000" => -- SB (Store Byte)
                             case addr(1 downto 0) is
@@ -177,7 +171,6 @@ begin
                             mem_we <= '0'; -- Clear write enable for invalid operations
                     end case;
                 elsif is_uart_access = '1' then
-                    report "LSU: Storing to UART. Addr: x" & to_hstring(to_bitvector(addr));
                     case addr is
                         when UART_DATA_ADDR =>
                             -- Store the LSB of data_reg_in to UART TX data
@@ -193,7 +186,6 @@ begin
                     end case;
                 else
                     -- Attempted store to unmapped memory region
-                    report "LSU: Attempted store to unmapped memory region: x" & to_hstring(to_bitvector(addr)) severity warning;
                 end if;
             else
                 -- Not a load or store instruction, ensure outputs are default
