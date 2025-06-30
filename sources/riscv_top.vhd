@@ -304,7 +304,7 @@ begin
         data => instr -- You'll need to declare this signal
     );
 
-    rom_inst_data : rom
+    rom_inst_data : rom -- ROM for data memory operations for reading string "hello world" in this example
     generic map(
         addr_width => 10,
         data_width => 32
